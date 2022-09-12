@@ -1,2 +1,2 @@
-# crypto-be-app
+# backend-app
 Backend APIs for interacting with NEAR
