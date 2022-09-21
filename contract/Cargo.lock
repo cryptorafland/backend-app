@@ -240,6 +240,7 @@ dependencies = [
  "borsh",
  "near-contract-standards",
  "near-sdk",
+ "rand 0.8.5",
  "serde",
  "serde_json",
  "wee_alloc",
