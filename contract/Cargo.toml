@@ -13,6 +13,7 @@ near-sdk = "4.0.0"
 borsh = "0.9.3"
 wee_alloc = "0.4.5"
 rand = "0.8.5"
+getrandom = { version = "0.2", features = ["js"] }
 
 [lib]
 crate-type = ["cdylib"]
