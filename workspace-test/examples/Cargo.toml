@@ -1,0 +1,48 @@
+[package]
+name = "examples"
+version = "0.0.0"
+publish = false
+edition = "2018"
+
+[dev-dependencies]
+anyhow = "1.0"
+borsh = "0.9"
+maplit = "1.0"
+near-units = "0.1.0"
+serde = "1.0"
+serde_with = "1"
+# arbitrary_precision enabled for u128 types that workspaces requires for Balance types
+serde_json = { version = "1.0", features = ["arbitrary_precision"] }
+tokio = { version = "1.10.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3.5", features = ["env-filter"] }
+workspaces = { path = "../workspaces" }
+
+[[example]]
+name = "nft"
+path = "src/nft.rs"
+
+[[example]]
+name = "status_message"
+path = "src/status_message.rs"
+
+[[example]]
+name = "spooning"
+path = "src/spooning.rs"
+
+[[example]]
+name = "ref_finance"
+path = "src/ref_finance.rs"
+
+[[example]]
+name = "fast_forward"
+path = "src/fast_forward.rs"
+
+[[example]]
+name = "croncat"
+path = "src/croncat.rs"
+
+[[example]]
+name = "raffland"
+path = "src/raffland.rs"
+

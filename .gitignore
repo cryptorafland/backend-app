@@ -23,4 +23,5 @@
 hs_err_pid*
 
 contract/target/
-workspace-rs1/target/
+workspace-test/target/
+workspace-rs1/
