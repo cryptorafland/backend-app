@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_contract_standards::non_fungible_token::{TokenId};
 use near_sdk::{AccountId, env, log, near_bindgen, Balance, Promise};
 use rand::seq::SliceRandom;
@@ -14,6 +14,9 @@ use near_sdk::serde::{Deserialize, Serialize};
   */
 
 pub const STORAGE_COST: u128 = 1_000_000_000_000_000_000_000;
+const DEFAULT_COUNTER: u128 = 0;
+const DEFAULT_MESSAGE: &str = "Hello";
+
 
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
@@ -21,7 +24,20 @@ pub struct RafflesMap {
     raffles: HashMap<u128, Raffle>,
     counter: Counter,
     pub beneficiary: AccountId,
+    greeting: String,
 }
+
+impl Default for RafflesMap{
+    fn default() -> Self {
+        Self {
+            beneficiary: "v1.faucet.nonofficial.testnet".parse().unwrap(),
+            counter: Counter{ value: DEFAULT_COUNTER },
+            raffles: HashMap::new(),
+            greeting: DEFAULT_MESSAGE.to_string(),
+        }
+    }
+  }
+  
 
 #[near_bindgen]
 impl RafflesMap {
@@ -32,13 +48,18 @@ impl RafflesMap {
         assert!(!env::state_exists(), "Already initialized");
         Self {
             beneficiary: beneficiary,
-            counter: Counter{ value: 0 },
+            counter: Counter{ value: DEFAULT_COUNTER },
             raffles: HashMap::new(),
+            greeting: DEFAULT_MESSAGE.to_string(),
         }
     }
 
-    fn get_counter(&self) -> u128 {
-        return self.counter.value
+    pub fn get_greeting(&self) -> String {
+        return self.greeting.clone();
+    }
+
+    pub fn get_counter(&self) -> u128 {
+        return self.counter.value.clone()
     }
 
     fn get_raffle(&self, key: u128) -> Option<&Raffle> {
