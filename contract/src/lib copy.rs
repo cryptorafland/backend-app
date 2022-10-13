@@ -64,6 +64,10 @@ impl RafflesMap {
         &self.counter.value
     }
 
+    fn get_counter1(&self) -> u128 {
+        &self.counter.value.clone()
+    }
+
     fn get_raffle(&self, key: u128) -> Option<Raffle> {
         self.raffles.get(&key)
     }
@@ -287,7 +291,7 @@ impl Raffle {
         // let mut rng = rand::thread_rng();
         
         let rng = 1;//rand::thread_rng();
-        let random_number = 1;//rng.gen_range(0..self.participants.len());
+        let random_number = 1; //rng.gen_range(0..self.participants.len());
         self.participants.as_vector().get(random_number)
     }
 

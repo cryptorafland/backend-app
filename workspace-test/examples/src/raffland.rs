@@ -1,8 +1,8 @@
 use serde_json::json;
 use workspaces::{Account, AccountId, Contract, Worker};
 
-const NFT_RAFFLAND: &str = "/home/hello-near-rust/contract/target/wasm32-unknown-unknown/release/contract.wasm";
-// const NFT_RAFFLAND: &str = "/home/raffland/backend-app/contract/target/wasm32-unknown-unknown/release/raffland.wasm";
+// const NFT_RAFFLAND: &str = "/home/hello-near-rust/contract/target/wasm32-unknown-unknown/release/contract.wasm";
+const NFT_RAFFLAND: &str = "/home/raffland/backend-app/contract/target/wasm32-unknown-unknown/release/contract.wasm";
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -22,8 +22,8 @@ async fn main() -> anyhow::Result<()> {
     //     .transact()
     //     .await?;
     // contract.get_greeting()
-    let result: u128 = contract
-        .call("get_counter")
+    let result: String = contract
+        .call("get_greeting")
         .view()
         .await?
         .json()?;
