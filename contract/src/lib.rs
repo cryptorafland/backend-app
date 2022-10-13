@@ -7,6 +7,7 @@ use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
 use near_sdk::{AccountId, env, log, near_bindgen, Balance, Promise};
 use near_sdk::env::block_timestamp_ms;
 use near_sdk::serde::{Deserialize, Serialize};
+use rand::Rng;
 
 /**
   * now only 1 winner
@@ -86,7 +87,7 @@ impl RafflesMap {
         // let sender: AccountId = env::predecessor_account_id();
         let pays: Balance = env::attached_deposit();
 
-        let ticket_price: u128 = self.raffles.get_mut(&key).unwrap().get_ticket_price();
+        let ticket_price: u128 = self.raffles.get(&key).unwrap().get_ticket_price();
 
         let to_transfer: Balance = if pays >= ticket_price {
             // Subtract the storage cost to the amount to transfer
@@ -101,13 +102,17 @@ impl RafflesMap {
             let return_back: Balance = pays - ticket_price;
             Promise::new(sender.clone()).transfer(return_back);
 
-            self.raffles.get_mut(&key).unwrap().add_participant(sender);
+            let mut current_raffle = self.raffles.get(&key).unwrap();
+            let mut participants = current_raffle.participants;
+            let participant_exist = participants.insert(sender);
+
+            // self.raffles.get_mut(&key).unwrap().add_participant(sender);
         }
 
         //new stuff
         let mut current_raffle = self.raffles.get(&key).unwrap();
         let mut participants = current_raffle.participants;
-        let participant_exist = participants.insert(id);
+        let participant_exist = participants.insert(sender);
         if participant_exist {
             current_raffle.participants = participants;
             self.raffles.insert(&key, &current_raffle);
@@ -123,17 +128,22 @@ impl RafflesMap {
         self.counter.value = counter;
     }
 
-    pub fn start_new_raffle(&mut self,end_time: u32, ticket_price: u32, prize: JsonToken) {
-        self.add_new_raffle(end_time, ticket_price, prize);
+    // pub fn start_new_raffle(&mut self,end_time: u32, ticket_price: u32, prize: JsonToken) {
+    //     self.add_new_raffle(end_time, ticket_price, prize);
 
-        // wait some time
-        // IN THIS TIME WE NEED TO ADD PARTICIPANT
-        // thread::spawn(|| {
-        //     sleep(Duration::from_secs(5));
-        // });
+    //     // wait some time
+    //     // IN THIS TIME WE NEED TO ADD PARTICIPANT
+    //     // thread::spawn(|| {
+    //     //     sleep(Duration::from_secs(5));
+    //     // });
 
-        self.cancel_raffle();
+    //     self.cancel_raffle();
+    // }
+
+    fn increment_counter(&mut self) {
+        self.counter.value += 1;
     }
+
 
     fn add_new_raffle(&mut self, end_time: u64, ticket_price: u128, prizes: Vector<JsonToken>) {
         self.increment_counter();
@@ -141,10 +151,10 @@ impl RafflesMap {
         let winners: Vector<Winner> = Vector::new(b"t");
         let participants: UnorderedSet<AccountId> = UnorderedSet::new(b"s");
 
-        // increment counter
-        let mut counter = self.get_counter();
-        counter = counter + 1;
-        self.set_counter(counter);
+        // // increment counter
+        // let mut counter = self.get_counter();
+        // counter = counter + 1;
+        // self.set_counter(counter);
 
         // take creator id
         let creator: AccountId = env::predecessor_account_id();
@@ -241,13 +251,13 @@ pub struct Raffle {
 
 #[near_bindgen]
 impl Raffle {
-    fn add_participant(&mut self, id: AccountId) {
-        self.participants.push(id);
-    }
+    // fn add_participant(&mut self, id: AccountId) {
+    //     self.participants.push(id);
+    // }
 
-    fn shuffle_participant(&mut self) {
-        self.participants.shuffle(&mut thread_rng());
-    }
+    // fn shuffle_participant(&mut self) {
+    //     self.participants.shuffle(&mut thread_rng());
+    // }
 
     fn get_ticket_price(&self) -> u128 {
         return self.ticket_price;
@@ -257,30 +267,31 @@ impl Raffle {
         return &self.creator_wallet_account_id
     }
 
-    fn get_participants(&self) -> &Vec<AccountId> {
-        return &self.participants
+    fn get_participants(&self) -> &UnorderedSet<AccountId> {
+        &self.participants
     }
 
     fn get_winners(&self) -> &Vector<Winner> {
         &self.winners
     }
 
-    fn get_prize(&self) -> &Vec<JsonToken> {
+    fn get_prizes(&self) -> &Vector<JsonToken> {
         return &self.prizes
     }
 
-    fn get_random_winner(&self) -> &AccountId {
-        self.get_participants().choose(&mut thread_rng()).unwrap()
+    fn get_prize(&mut self, counter: u64) -> Option<JsonToken> {
+        self.prizes.get(counter)
     }
 
-    fn add_winner(&mut self, winner: AccountId) {
-        let prize: Option<&JsonToken> = self.prizes.get(0);
-        let new_winner: Winner = Winner {
-            winner_wallet_account_id: winner,
-            prize: prize.unwrap().clone(),
-        };
-        &self.winners.push(new_winner);
+    fn get_random_participant(&self) -> Option<AccountId> {
+        let mut rng = rand::thread_rng();
+        let random_number = rng.gen_range(0..self.participants.len());
+        self.participants.as_vector().get(random_number)
     }
+
+    // fn get_random_winner(&self) -> &AccountId {
+    //     self.get_participants().choose(&mut thread_rng()).unwrap()
+    // }
 
     fn game_continues(&self) -> &bool {
         &self.game_continues
@@ -347,7 +358,7 @@ mod tests {
     fn set_then_get_counter() {
         // let mut contract = RafflesMap::default();
         let mut contract = RafflesMap::init(BENEFICIARY.parse().unwrap());
-        assert_eq!(contract.get_counter(), 0);
+        assert_eq!(contract.get_counter().clone(), 0);
         contract.set_counter(1);
         assert_eq!(contract.get_counter().clone(), 1);
     }
