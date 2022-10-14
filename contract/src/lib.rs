@@ -15,6 +15,7 @@ use near_sdk::env::block_timestamp_ms;
   */
 
 pub const STORAGE_COST: u128 = 1_000_000_000_000_000_000_000;
+pub const ADD_PART_CALL_COST: u128 = 1_000_000_000_000_000_000_000;
 const DEFAULT_COUNTER: u128 = 0;
 const DEFAULT_MESSAGE: &str = "Hello";
 
@@ -60,8 +61,12 @@ impl RafflesMap {
         return self.greeting.clone();
     }
 
-    fn get_counter(&self) -> &u128 {
+    pub fn get_counter(&self) -> &u128 {
         &self.counter.value
+    }
+
+    pub fn get_counter1(&self) -> u128 {
+        return self.counter.value.clone();
     }
 
     fn get_raffle(&self, key: u128) -> Option<Raffle> {
@@ -102,24 +107,26 @@ impl RafflesMap {
             let return_back: Balance = pays - ticket_price;
             Promise::new(sender.clone()).transfer(return_back);
 
-            let current_raffle = self.raffles.get(&key).unwrap();
+            let mut current_raffle = self.raffles.get(&key).unwrap();
             let mut participants = current_raffle.participants;
             let participant_exist = participants.insert(sender);
+            if participant_exist {
+                current_raffle.participants = participants;
+                self.raffles.insert(&key, &current_raffle);
 
-            // self.raffles.get_mut(&key).unwrap().add_participant(sender);
-        }
+                Promise::new(self.beneficiary.clone()).transfer(to_transfer);
+                let return_back: Balance = pays - ticket_price;
+                Promise::new(sender.clone()).transfer(return_back);
 
-        //new stuff
-        let mut current_raffle = self.raffles.get(&key).unwrap();
-        let mut participants = current_raffle.participants;
-        let participant_exist = participants.insert(sender);
-        if participant_exist {
-            current_raffle.participants = participants;
-            self.raffles.insert(&key, &current_raffle);
-            true
+                true
+            } else {
+                Promise::new(sender.clone()).transfer(pays - ADD_PART_CALL_COST);
+                false
+            }
         } else {
             false
         }
+
 
     }
 
@@ -128,7 +135,7 @@ impl RafflesMap {
         self.counter.value = counter;
     }
 
-    fn increment_counter(&mut self) {
+    pub fn increment_counter(&mut self) {
         self.counter.value += 1;
     }
 

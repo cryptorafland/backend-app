@@ -1,8 +1,13 @@
 use serde_json::json;
 use workspaces::{Account, AccountId, Contract, Worker};
+// use near_sdk::collections::{Vector};
+// use near_contract_standards::non_fungible_token::TokenId;
+
+
 
 // const NFT_RAFFLAND: &str = "/home/hello-near-rust/contract/target/wasm32-unknown-unknown/release/contract.wasm";
 const NFT_RAFFLAND: &str = "/home/raffland/backend-app/contract/target/wasm32-unknown-unknown/release/contract.wasm";
+
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -12,18 +17,60 @@ async fn main() -> anyhow::Result<()> {
     // let deposit = 10000000000000000000000;
     let alice = worker.dev_create_account().await?;
 
-    // // let result: u128 = contract.call("get_counter").view().await?;
+    //create vector and add token to it
+
     // let outcome = contract
     //     .call("init")
     //     .args_json(json!({
-    //         "beneficiary": contract.id(),
+    //         "beneficiary": alice.id(),
+    //     }))
+    //     // .deposit(deposit)
+    //     .transact()
+    //     .await?;
+
+
+    // println!("status: {:?}", outcome);
+    // let outcome = contract
+    //     .call("add_new_raffle")
+    //     .args_json(json!({
+    //         "end_time": 42,
+    //         "ticket_price": 42,
+    //         "prizes": [
+    //             {
+    //                 "token_id": "1111",
+    //                 "owner_id": alice.id(),
+    //             },
+    //         ],
+    //     }))
+    //     // .deposit(deposit)
+    //     .transact()
+    //     .await?;
+
+    // let outcome = contract
+    //     .call("init")
+    //     .args_json(json!({
+    //         "beneficiary": alice.id(),
     //     }))
     //     .deposit(deposit)
     //     .transact()
     //     .await?;
+
     // contract.get_greeting()
-    let result: String = contract
-        .call("get_greeting")
+    let result: u128 = contract
+        .call("get_counter1")
+        .view()
+        .await?
+        .json()?;
+
+    println!("status: {:?}", result);
+
+    contract
+        .call("increment_counter")
+        .transact()
+        .await?;
+
+    let result: u128 = contract
+        .call("get_counter1")
         .view()
         .await?
         .json()?;
