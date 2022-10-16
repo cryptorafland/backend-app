@@ -7,6 +7,9 @@ use near_rng::Rng;
 use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
 use near_sdk::{AccountId, env, log, near_bindgen, Balance, Promise};
 use near_sdk::env::block_timestamp_ms;
+use near_sdk::{
+    serde::{Deserialize, Serialize}
+};
 
 /**
   * now only 1 winner
@@ -139,8 +142,20 @@ impl RafflesMap {
         self.counter.value += 1;
     }
 
-    fn add_new_raffle(&mut self, end_time: u64, ticket_price: u128, prizes: Vector<JsonToken>) {
+    fn add_new_raffle(
+        &mut self, 
+        // args: Base64VecU8
+        end_time: u64, 
+        ticket_price: u128, 
+        prizes: Vector<JsonToken>
+    ) {
         self.increment_counter();
+
+        // let raffle_args: NewRaffleArgs = serde_json::from_slice(&args.0.as_slice()).unwrap();
+
+        // let end_time = u64::from(raffle_args.end_time);
+        // let ticket_price = u128::from(raffle_args.ticket_price);
+        // let prizes = Vector<JsonToken>::from(raffle_args.prizes);
 
         let winners: Vector<Winner> = Vector::new(b"t");
         let participants: UnorderedSet<AccountId> = UnorderedSet::new(b"s");
@@ -224,13 +239,21 @@ impl RafflesMap {
     }
 }
 
-#[near_bindgen]
+// #[near_bindgen]
 #[derive(Eq, Default, Hash, PartialEq, PartialOrd, BorshDeserialize, BorshSerialize)]
 pub struct Counter {
     value: u128,
 }
 
-#[near_bindgen]
+// #[near_bindgen]
+#[derive(BorshDeserialize, BorshSerialize, Debug)]
+pub struct NewRaffleArgs {
+    end_time: u64,
+    ticket_price: u128,
+    prizes: Vector<JsonToken>
+}
+
+// #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Raffle {
     //TODO: end time or continues
@@ -297,14 +320,14 @@ impl Raffle {
     }
 }
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Debug, PartialEq, Eq)]
+#[derive(BorshDeserialize, BorshSerialize, Deserialize, Serialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
 pub struct JsonToken {
     pub token_id: TokenId,
     pub owner_id: AccountId,
 }
 
-#[near_bindgen]
+// #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct Winner {
     winner_wallet_account_id: AccountId,

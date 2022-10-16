@@ -19,17 +19,17 @@ async fn main() -> anyhow::Result<()> {
 
     //create vector and add token to it
 
-    // let outcome = contract
-    //     .call("init")
-    //     .args_json(json!({
-    //         "beneficiary": alice.id(),
-    //     }))
-    //     // .deposit(deposit)
-    //     .transact()
-    //     .await?;
+    let outcome = contract
+        .call("init")
+        .args_json(json!({
+            "beneficiary": alice.id(),
+        }))
+        // .deposit(deposit)
+        .transact()
+        .await?;
 
 
-    // println!("status: {:?}", outcome);
+    println!("status: {:?}", outcome);
     // let outcome = contract
     //     .call("add_new_raffle")
     //     .args_json(json!({
@@ -42,6 +42,11 @@ async fn main() -> anyhow::Result<()> {
     //             },
     //         ],
     //     }))
+    //     .transact()
+    //     .await?;
+
+    
+    // println!("status: {:?}", outcome);
     //     // .deposit(deposit)
     //     .transact()
     //     .await?;
