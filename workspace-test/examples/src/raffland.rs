@@ -30,23 +30,23 @@ async fn main() -> anyhow::Result<()> {
 
 
     println!("status: {:?}", outcome);
-    // let outcome = contract
-    //     .call("add_new_raffle")
-    //     .args_json(json!({
-    //         "end_time": 42,
-    //         "ticket_price": 42,
-    //         "prizes": [
-    //             {
-    //                 "token_id": "1111",
-    //                 "owner_id": alice.id(),
-    //             },
-    //         ],
-    //     }))
-    //     .transact()
-    //     .await?;
+    let outcome = contract
+        .call("add_new_raffle")
+        .args_json(json!({
+            "end_time": 42,
+            "ticket_price": 42,
+            "prizes": [
+                {
+                    "token_id": "1111",
+                    "owner_id": alice.id(),
+                },
+            ],
+        }))
+        .transact()
+        .await?;
 
     
-    // println!("status: {:?}", outcome);
+    println!("status: {:?}", outcome);
     //     // .deposit(deposit)
     //     .transact()
     //     .await?;

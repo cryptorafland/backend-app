@@ -86,7 +86,7 @@ impl RafflesMap {
     // }
 
     fn get_prize(&self, key: &u128, counter: u64) -> Option<JsonToken> {
-        self.raffles.get(key).unwrap().get_prize(counter)
+        self.raffles.get(key).unwrap().get_prize()
     }
 
     #[payable]
@@ -142,12 +142,12 @@ impl RafflesMap {
         self.counter.value += 1;
     }
 
-    fn add_new_raffle(
+    pub fn add_new_raffle(
         &mut self, 
         // args: Base64VecU8
         end_time: u64, 
         ticket_price: u128, 
-        prizes: Vector<JsonToken>
+        prizes: Vec<JsonToken>
     ) {
         self.increment_counter();
 
@@ -199,7 +199,7 @@ impl RafflesMap {
                     let winner_account: AccountId = self.get_random_participant(&key).unwrap();
 
                     // take prize
-                    let prize: JsonToken = self.get_prize(&key, _x).unwrap();
+                    let prize: JsonToken = self.get_prize(&key, _x.try_into().unwrap()).unwrap();
 
                     // TODO в случае выбора приза на рандоме
                     // если уже был приз то ставить ему фоллс для этого призы на мап
@@ -246,19 +246,21 @@ pub struct Counter {
 }
 
 // #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, Debug)]
+#[derive(Deserialize, Serialize, BorshDeserialize, BorshSerialize, Debug)]
+#[serde(crate = "near_sdk::serde")]
 pub struct NewRaffleArgs {
     end_time: u64,
     ticket_price: u128,
-    prizes: Vector<JsonToken>
+    prizes: Vec<JsonToken>
 }
 
 // #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
+// #[serde(crate = "near_sdk::serde")]
 pub struct Raffle {
     //TODO: end time or continues
     end_time: u64,
-    prizes: Vector<JsonToken>,
+    prizes: Vec<JsonToken>,
     ticket_price: u128,
     creator_wallet_account_id: AccountId,
     game_continues: bool,
@@ -266,7 +268,7 @@ pub struct Raffle {
     participants: UnorderedSet<AccountId>,
 }
 
-#[near_bindgen]
+// #[near_bindgen]
 impl Raffle {
     // fn add_participant(&mut self, id: AccountId) {
     //     self.participants.push(id);
@@ -292,12 +294,12 @@ impl Raffle {
         &self.winners
     }
 
-    fn get_prizes(&self) -> &Vector<JsonToken> {
+    fn get_prizes(&self) -> &Vec<JsonToken> {
         return &self.prizes
     }
 
-    fn get_prize(&mut self, counter: u64) -> Option<JsonToken> {
-        self.prizes.get(counter)
+    fn get_prize(&mut self) -> Option<JsonToken> {
+        self.prizes.pop()
     }
 
     fn get_random_participant(&self) -> Option<AccountId> {
@@ -342,7 +344,7 @@ pub struct Winner {
 // use near collection in state!!!
 // метод что позволит тем кто у нас хранит токен за обновление голосовать
 
-#[near_bindgen]
+// #[near_bindgen]
 impl Winner {
 
     //TODO: send prize to winner
@@ -394,7 +396,7 @@ mod tests {
     fn test_new_created_raffle() {
         // let mut contract = RafflesMap::default();
         let mut contract = RafflesMap::init(BENEFICIARY.parse().unwrap());
-        let mut vec: Vector<JsonToken> = Vector::new(b"m");
+        let mut vec: Vec<JsonToken> = Vec::new(b"m");
         vec.push(&JsonToken {
             token_id: "1111".to_string(),
             owner_id: env::predecessor_account_id(),
@@ -408,7 +410,7 @@ mod tests {
         assert_eq!(contract.raffles.get(&1u128).unwrap().game_continues, true);
         assert_eq!(contract.get_counter().clone(), 1);
 
-        let mut vec1: Vector<JsonToken> = Vector::new(b"m");
+        let mut vec1: Vec<JsonToken> = Vec::new(b"m");
         vec1.push(&JsonToken {
             token_id: "1111".to_string(),
             owner_id: env::predecessor_account_id(),
@@ -421,7 +423,7 @@ mod tests {
     #[test]
     fn add_participant() {
         let mut contract = RafflesMap::init(BENEFICIARY.parse().unwrap());
-        let mut vec: Vector<JsonToken> = Vector::new(b"s");
+        let mut vec: Vec<JsonToken> = Vec::new(b"s");
         vec.push(&JsonToken {
             token_id: "1111".to_string(),
             owner_id: env::predecessor_account_id(),
@@ -446,7 +448,7 @@ mod tests {
     #[test]
     fn test_winner_and_game_continues() {
         let mut contract = RafflesMap::default();
-        let mut vec: Vector<JsonToken> = Vector::new(b"m");
+        let mut vec: Vec<JsonToken> = Vec::new(b"m");
         vec.push(&JsonToken {
             token_id: "1111".to_string(),
             owner_id: env::predecessor_account_id(),
@@ -483,7 +485,7 @@ mod tests {
     #[test]
     fn test_one_acc_one_time() {
         let mut contract = RafflesMap::default();
-        let mut vec: Vector<JsonToken> = Vector::new(b"m");
+        let mut vec: Vec<JsonToken> = Vec::new(b"m");
 
         vec.push(&JsonToken {
             token_id: "1".to_string(),
