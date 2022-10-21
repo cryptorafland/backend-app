@@ -82,39 +82,31 @@ async fn main() -> anyhow::Result<()> {
 
     println!("status: {:?}", result);
 
-    // let outcome = contract
-    //     .call("get_counter")
-    //     .transact()
-    //     .await?;
+//  
+//   @@@@@@@ @@@@@@@@  @@@@@@ @@@@@@@  @@@@@@       @@@@@@  @@@@@@@ @@@@@@@@ @@@  @@@  @@@@@@  @@@@@@@  @@@  @@@@@@   @@@@@@     
+//     @@!   @@!      !@@       @@!   !@@          !@@     !@@      @@!      @@!@!@@@ @@!  @@@ @@!  @@@ @@! @@!  @@@ !@@         
+//     @!!   @!!!:!    !@@!!    @!!    !@@!!        !@@!!  !@!      @!!!:!   @!@@!!@! @!@!@!@! @!@!!@!  !!@ @!@  !@!  !@@!!      
+//     !!:   !!:          !:!   !!:       !:!          !:! :!!      !!:      !!:  !!! !!:  !!! !!: :!!  !!: !!:  !!!     !:!     
+//      :    : :: ::: ::.: :     :    ::.: :       ::.: :   :: :: : : :: ::: ::    :   :   : :  :   : : :    : :. :  ::.: :      
+                                                                                                                              
+// * 1) create raffle with M prizes, add N users, performe drawls, check if winners got their prizes
+// * 1.1) raffle can't add participants after certain time close to drawl
+// * 1.2) check how big M and N can be
+// * 1.3) check if raffle can be created with 0 prizes
+// * 1.4) check if raffle can be created with 0 participants
+// * 1.5) check case M > N
 
-    // println!("new_default_meta outcome: {:#?}", outcome);
 
-    // let deposit = 10000000000000000000000;
-    // let outcome = contract
-    //     .call("nft_mint")
-    //     .args_json(json!({
-    //         "token_id": "0",
-    //         "token_owner_id": contract.id(),
-    //         "token_metadata": {
-    //             "title": "Olympus Mons",
-    //             "dscription": "Tallest mountain in charted solar system",
-    //             "copies": 1,
-    //         },
-    //     }))
-    //     .deposit(deposit)
-    //     .transact()
-    //     .await?;
+// * 2) check, that RNG is really random
+// * 3) (optionly) check creation of several raffles (from 1)
+// * 4) check that get_participants, get_winners, add_participant, am_I_winner/am_I_participant
+// * return correct and reasonable values
+// * 5) check correctness of gas usage and requirements 
+// * 6) check correctness of storage usage 
+// * 7) check NFT minting and transfering
+// * 8) check that everything above correctly works with NFTs
 
-    // println!("nft_mint outcome: {:#?}", outcome);
 
-    // let result: serde_json::Value = worker
-    //     .view(contract.id(), "nft_metadata", Vec::new())
-    //     .await?
-    //     .json()?;
-
-    // println!("--------------\n{}", result);
-
-    // println!("Dev Account ID: {}", contract.id());
 
     Ok(())
 }
