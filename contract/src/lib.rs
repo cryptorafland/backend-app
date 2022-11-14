@@ -171,7 +171,7 @@ impl RafflesMap {
 
 
     #[private]
-    pub fn check_token_ownership_and_finilize(
+    pub fn check_token_ownership_and_finalize(
         &mut self, 
         #[callback_result] call_result: Result<Token, PromiseError>,
         end_time: u64, 
@@ -240,7 +240,7 @@ impl RafflesMap {
         return promise.then( // Create a promise to callback query_greeting_callback
                 Self::ext(env::current_account_id())
                 .with_static_gas(Gas(1*TGAS))
-                .check_token_ownership_and_finilize(
+                .check_token_ownership_and_finalize(
                     end_time, 
                     ticket_price, 
                     prizes
