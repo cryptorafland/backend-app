@@ -2,14 +2,40 @@ extern crate core;
 
 use std::borrow::BorrowMut;
 use borsh::{self, BorshDeserialize, BorshSerialize};
-use near_contract_standards::non_fungible_token::TokenId;
+use near_contract_standards::non_fungible_token::{Token, TokenId};
 use near_rng::Rng;
 use near_sdk::collections::{UnorderedMap, UnorderedSet, Vector};
-use near_sdk::{AccountId, env, log, near_bindgen, Balance, Promise};
+use near_sdk::{AccountId, env, log, near_bindgen, Balance, Promise, PromiseError, Gas};
 use near_sdk::env::block_timestamp_ms;
 use near_sdk::{
     serde::{Deserialize, Serialize}
 };
+use near_sdk::{ext_contract};
+use serde_json::json;
+use serde_json::Value;
+
+
+// Validator interface, for cross-contract calls
+#[ext_contract(nft_contract)]
+trait NFTContract {
+  fn nft_transfer(
+        &mut self,
+        receiver_id: AccountId,
+        token_id: TokenId,
+        //we introduce an approval ID so that people with that approval ID can transfer the token
+        approval_id: Option<u64>,
+        memo: Option<String>,
+    );
+
+    fn nft_token(&mut self, token_id: TokenId) -> Option<Token>;
+}
+// fn nft_transfer(
+        //     &mut self,
+        //     receiver_id: AccountId,
+        //     token_id: TokenId,
+        //     memo: Option<String>,
+        // )
+
 
 /**
   * now only 1 winner
@@ -21,6 +47,7 @@ pub const STORAGE_COST: u128 = 1_000_000_000_000_000_000_000;
 pub const ADD_PART_CALL_COST: u128 = 1_000_000_000_000_000_000_000;
 const DEFAULT_COUNTER: u128 = 0;
 const DEFAULT_MESSAGE: &str = "Hello";
+pub const TGAS: u64 = 1_000_000_000_000;
 
 
 #[near_bindgen]
@@ -142,47 +169,83 @@ impl RafflesMap {
         self.counter.value += 1;
     }
 
+
+    #[private]
+    pub fn check_token_ownership_and_finilize(
+        &mut self, 
+        #[callback_result] call_result: Result<Token, PromiseError>,
+        end_time: u64, 
+        ticket_price: u128, 
+        prizes: Vec<JsonToken>
+    ) -> bool {
+        // Check if the promise succeeded by calling the method outlined in external.rs
+        if call_result.is_err() {
+            log!("There was an error contacting checking NFT ownership");
+            return false;
+        }
+
+
+        let result: Token = call_result.unwrap();
+        let owner_id: AccountId = result.owner_id;
+
+        if owner_id == env::current_account_id() {
+            self.increment_counter();
+
+            let winners: Vector<Winner> = Vector::new(b"t");
+            let participants: UnorderedSet<AccountId> = UnorderedSet::new(b"s");
+            let creator: AccountId = env::predecessor_account_id();
+
+            // TODO: calculate end time
+
+            let new_raffle: Raffle = Raffle {
+                end_time: end_time,
+                prizes: prizes,
+                ticket_price: ticket_price,
+                creator_wallet_account_id: creator,
+                game_continues: true,
+                winners: winners,
+                participants: participants,
+            };
+
+            let counter = *self.get_counter();
+            self.raffles.insert(&counter, &new_raffle);
+
+            return true;
+        } else {
+            return false;
+        } 
+    }
+    
+
     pub fn add_new_raffle(
         &mut self, 
         // args: Base64VecU8
         end_time: u64, 
         ticket_price: u128, 
         prizes: Vec<JsonToken>
-    ) {
-        self.increment_counter();
+    ) -> Promise {
+        
+        //get ownder_id from prizes 
+        let nft_contract = prizes[0].owner_id.clone();
+        let nft_token_id = prizes[0].token_id.clone();
+        //near protocol this contract
+        let this_contract = env::current_account_id();
 
-        // let raffle_args: NewRaffleArgs = serde_json::from_slice(&args.0.as_slice()).unwrap();
+        let st: String = "".parse().unwrap();
 
-        // let end_time = u64::from(raffle_args.end_time);
-        // let ticket_price = u128::from(raffle_args.ticket_price);
-        // let prizes = Vector<JsonToken>::from(raffle_args.prizes);
-
-        let winners: Vector<Winner> = Vector::new(b"t");
-        let participants: UnorderedSet<AccountId> = UnorderedSet::new(b"s");
-
-        // // increment counter
-        // let mut counter = self.get_counter();
-        // counter = counter + 1;
-        // self.set_counter(counter);
-
-        // take creator id
-        let creator: AccountId = env::predecessor_account_id();
-
-        // TODO: calculate end time
-
-        let new_raffle: Raffle = Raffle {
-            end_time: end_time,
-            prizes: prizes,
-            ticket_price: ticket_price,
-            creator_wallet_account_id: creator,
-            game_continues: true,
-            winners: winners,
-            participants: participants,
-        };
-
-        let counter = *self.get_counter();
-
-        self.raffles.insert(&counter, &new_raffle);
+        let promise = nft_contract::ext(nft_contract)
+            .with_static_gas(Gas(1*TGAS))
+            .nft_token(nft_token_id);
+        
+        return promise.then( // Create a promise to callback query_greeting_callback
+                Self::ext(env::current_account_id())
+                .with_static_gas(Gas(1*TGAS))
+                .check_token_ownership_and_finilize(
+                    end_time, 
+                    ticket_price, 
+                    prizes
+                )
+            );
     }
 
     fn cancel_raffle(&mut self, key: u128) -> bool {
@@ -213,7 +276,18 @@ impl RafflesMap {
                     };
                     self.add_winner(key, winner);
 
-                    // TODO: send price
+                    // TODO: send price to winner
+                    // functional to do so
+                    // let promise = nft_contract::ext(nft_contract)
+                    // .with_static_gas(Gas(1*TGAS))
+                    // .with_attached_deposit(1)
+                    // .add_full_access_key(env::signer_account_pk())
+                    // .nft_transfer(
+                    //     this_contract,
+                    //     nft_token_id,
+                    //     Some(1u64),
+                    //     Some(st)
+                    // );
                 }
                 self.set_game_continues(false, key);
                 true
@@ -327,6 +401,7 @@ impl Raffle {
 pub struct JsonToken {
     pub token_id: TokenId,
     pub owner_id: AccountId,
+    // pub nft_contract: AccountId,
 }
 
 // #[near_bindgen]
