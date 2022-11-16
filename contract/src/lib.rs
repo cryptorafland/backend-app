@@ -76,6 +76,14 @@ impl RafflesMap {
         self.raffles.get(&key)
     }
 
+    fn get_winners(&self, key: &u128) -> Vector<Winner> {
+        self.raffles.get(key).unwrap().winners
+    }
+
+    fn get_participants(&self, key: &u128) -> UnorderedSet<AccountId> {
+        self.raffles.get(key).unwrap().participants
+    }
+
     fn get_random_participant(&self, key: &u128) -> Option<AccountId> {
         self.raffles.get(key).unwrap().get_random_participant()
     }
