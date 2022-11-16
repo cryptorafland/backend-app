@@ -88,8 +88,11 @@ async fn main() -> anyhow::Result<()> {
 //     @!!   @!!!:!    !@@!!    @!!    !@@!!        !@@!!  !@!      @!!!:!   @!@@!!@! @!@!@!@! @!@!!@!  !!@ @!@  !@!  !@@!!      
 //     !!:   !!:          !:!   !!:       !:!          !:! :!!      !!:      !!:  !!! !!:  !!! !!: :!!  !!: !!:  !!!     !:!     
 //      :    : :: ::: ::.: :     :    ::.: :       ::.: :   :: :: : : :: ::: ::    :   :   : :  :   : : :    : :. :  ::.: :      
-                                                                                                                              
-// * 1) create raffle with M prizes, add N users, performe drawls, check if winners got their prizes
+                    
+
+//0 test return for get_participants & get_winners from outside!
+
+// * 1) create raffle with 1 prizes, add N users, performe drawls, check if winner got their prizes
 // * 1.1) raffle can't add participants after certain time close to drawl
 // * 1.2) check how big M and N can be
 // * 1.3) check if raffle can be created with 0 prizes
