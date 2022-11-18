@@ -38,13 +38,14 @@ trait NFTContract {
 
 
 /**
-  * now only 1 winner
-  * now only 1 prize
-  * now start only now
-  */
+ * now only 1 winner
+ * now only 1 prize
+ * now start only now
+ */
 
 pub const STORAGE_COST: u128 = 1_000_000_000_000_000_000_000;
 pub const ADD_PART_CALL_COST: u128 = 1_000_000_000_000_000_000_000;
+pub const MS_IN_HOUR: u64 = 3_600_000;
 const DEFAULT_COUNTER: u128 = 0;
 const DEFAULT_MESSAGE: &str = "Hello";
 pub const TGAS: u64 = 1_000_000_000_000;
@@ -60,11 +61,12 @@ pub struct RafflesMap {
 }
 
 impl Default for RafflesMap {
-
     fn default() -> Self {
         RafflesMap {
             raffles: UnorderedMap::new(b"m"),
-            counter: Counter{ value: DEFAULT_COUNTER },
+            counter: Counter {
+                value: DEFAULT_COUNTER,
+            },
             //counter: Default::default(),
             beneficiary: "v1.faucet.nonofficial.testnet".parse().unwrap(),
             greeting: DEFAULT_MESSAGE.to_string(),
@@ -74,14 +76,15 @@ impl Default for RafflesMap {
 
 #[near_bindgen]
 impl RafflesMap {
-
     #[init]
     #[private] // Public - but only callable by env::current_account_id()
     pub fn init(beneficiary: AccountId) -> Self {
         assert!(!env::state_exists(), "Already initialized");
         Self {
             beneficiary: beneficiary,
-            counter: Counter{ value: DEFAULT_COUNTER },
+            counter: Counter {
+                value: DEFAULT_COUNTER,
+            },
             raffles: UnorderedMap::new(b"m"),
             greeting: DEFAULT_MESSAGE.to_string(),
         }
@@ -103,6 +106,14 @@ impl RafflesMap {
         self.raffles.get(&key)
     }
 
+    fn get_winners(&self, key: &u128) -> Vector<Winner> {
+        self.raffles.get(key).unwrap().winners
+    }
+
+    fn get_participants(&self, key: &u128) -> UnorderedSet<AccountId> {
+        self.raffles.get(key).unwrap().participants
+    }
+
     fn get_random_participant(&self, key: &u128) -> Option<AccountId> {
         self.raffles.get(key).unwrap().get_random_participant()
     }
@@ -118,7 +129,6 @@ impl RafflesMap {
 
     #[payable]
     fn add_participant(&mut self, key: u128, sender: &AccountId) -> bool {
-
         // let sender: AccountId = env::predecessor_account_id();
         let pays: Balance = env::attached_deposit();
 
@@ -126,7 +136,7 @@ impl RafflesMap {
 
         let to_transfer: Balance = if pays >= ticket_price {
             // Subtract the storage cost to the amount to transfer
-            ticket_price - STORAGE_COST 
+            ticket_price - STORAGE_COST
         } else {
             0
         };
@@ -156,8 +166,6 @@ impl RafflesMap {
         } else {
             false
         }
-
-
     }
 
     fn set_counter(&mut self, counter: u128) {
@@ -172,10 +180,10 @@ impl RafflesMap {
 
     #[private]
     pub fn check_token_ownership_and_finalize(
-        &mut self, 
+        &mut self,
         #[callback_result] call_result: Result<Token, PromiseError>,
-        end_time: u64, 
-        ticket_price: u128, 
+        end_time: u64,
+        ticket_price: u128,
         prizes: Vec<JsonToken>
     ) -> bool {
         // Check if the promise succeeded by calling the method outlined in external.rs
@@ -191,23 +199,28 @@ impl RafflesMap {
         if owner_id == env::current_account_id() {
             self.increment_counter();
 
-            let winners: Vector<Winner> = Vector::new(b"t");
-            let participants: UnorderedSet<AccountId> = UnorderedSet::new(b"s");
-            let creator: AccountId = env::predecessor_account_id();
+        let winners: Vector<Winner> = Vector::new(b"t");
+        let participants: UnorderedSet<AccountId> = UnorderedSet::new(b"s");
+        let creator: AccountId = env::predecessor_account_id();
 
-            // TODO: calculate end time
+        // calculate end time
+        let start = block_timestamp_ms();
+        let mut end = start + end_time * MS_IN_HOUR;
+        if end_time.eq(&end) {
+            end = start + 24 * MS_IN_HOUR;
+        }
 
-            let new_raffle: Raffle = Raffle {
-                end_time: end_time,
-                prizes: prizes,
-                ticket_price: ticket_price,
-                creator_wallet_account_id: creator,
-                game_continues: true,
-                winners: winners,
-                participants: participants,
-            };
+        let new_raffle: Raffle = Raffle {
+            end_time: end,
+            prizes: prizes,
+            ticket_price: ticket_price,
+            creator_wallet_account_id: creator,
+            game_continues: true,
+            winners: winners,
+            participants: participants,
+        };
 
-            let counter = *self.get_counter();
+        let counter = *self.get_counter();
             self.raffles.insert(&counter, &new_raffle);
 
             return true;
@@ -249,9 +262,14 @@ impl RafflesMap {
     }
 
     fn cancel_raffle(&mut self, key: u128) -> bool {
-        // TODO: UNCOMMENT!!!
-        // if self.raffles.get(&key).unwrap().get_end_time() <= &block_timestamp_ms() {
-            if self.raffles.get(&key).unwrap().get_participants().is_empty() {
+        if self.raffles.get(&key).unwrap().get_end_time() < &block_timestamp_ms() {
+            if self
+                .raffles
+                .get(&key)
+                .unwrap()
+                .get_participants()
+                .is_empty()
+            {
                 // TODO: send all prizes to creator
                 true
             } else {
@@ -292,10 +310,9 @@ impl RafflesMap {
                 self.set_game_continues(false, key);
                 true
             }
-        // } else {
-        //     TODO: вывести когда конец
-        //     false
-        // }
+        } else {
+            false
+        }
     }
 
     fn add_winner(&mut self, key: u128, winner: Winner) {
@@ -325,7 +342,7 @@ pub struct Counter {
 pub struct NewRaffleArgs {
     end_time: u64,
     ticket_price: u128,
-    prizes: Vec<JsonToken>
+    prizes: Vec<JsonToken>,
 }
 
 // #[near_bindgen]
@@ -357,7 +374,7 @@ impl Raffle {
     }
 
     fn get_creator(&self) -> &AccountId {
-        return &self.creator_wallet_account_id
+        return &self.creator_wallet_account_id;
     }
 
     fn get_participants(&self) -> &UnorderedSet<AccountId> {
@@ -369,7 +386,7 @@ impl Raffle {
     }
 
     fn get_prizes(&self) -> &Vec<JsonToken> {
-        return &self.prizes
+        return &self.prizes;
     }
 
     fn get_prize(&mut self) -> Option<JsonToken> {
@@ -390,7 +407,6 @@ impl Raffle {
         &self.game_continues
     }
 
-
     fn get_end_time(&self) -> &u64 {
         &self.end_time
     }
@@ -401,7 +417,6 @@ impl Raffle {
 pub struct JsonToken {
     pub token_id: TokenId,
     pub owner_id: AccountId,
-    // pub nft_contract: AccountId,
 }
 
 // #[near_bindgen]
@@ -421,7 +436,6 @@ pub struct Winner {
 
 // #[near_bindgen]
 impl Winner {
-
     //TODO: send prize to winner
     fn send_prize_to_winner(&mut self) {
         // записать как праметр и отправлять через селф.
@@ -434,8 +448,8 @@ impl Winner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use near_sdk::testing_env;
     use near_sdk::test_utils::VMContextBuilder;
+    use near_sdk::testing_env;
     use near_sdk::Balance;
 
     const BENEFICIARY: &str = "beneficiary";
@@ -523,8 +537,8 @@ mod tests {
     #[test]
     fn test_winner_and_game_continues() {
         let mut contract = RafflesMap::default();
-        let mut vec: Vec<JsonToken> = Vec::new(b"m");
-        vec.push(&JsonToken {
+        let mut vec: Vec<JsonToken> = Vec::new();
+        vec.push(JsonToken {
             token_id: "1111".to_string(),
             owner_id: env::predecessor_account_id(),
         });
@@ -587,14 +601,27 @@ mod tests {
         contract.add_participant(1, &env::predecessor_account_id());
 
         assert_eq!(contract.raffles.get(&1u128).unwrap().participants.len(), 1);
-        assert_eq!(contract.add_participant(1, &env::predecessor_account_id()), false);
-        assert_eq!(contract.add_participant(1, &AccountId::new_unchecked("alice.near".to_string())), true);
+        assert_eq!(
+            contract.add_participant(1, &env::predecessor_account_id()),
+            false
+        );
+        assert_eq!(
+            contract.add_participant(1, &AccountId::new_unchecked("alice.near".to_string())),
+            true
+        );
         assert_eq!(contract.raffles.get(&1u128).unwrap().participants.len(), 2);
     }
 
-    // TODO: test for time cancel
-    // #[test]
-    // fn test_cancel_time() {
-    //
-    // }
+    #[test]
+    fn test_timer() {
+        let mut contract = RafflesMap::default();
+        let mut vec: Vec<JsonToken> = Vec::new();
+        vec.push(JsonToken {
+            token_id: "1111".to_string(),
+            owner_id: env::predecessor_account_id(),
+        });
+        contract.add_new_raffle(1, 1, vec);
+        contract.cancel_raffle(1u128);
+        assert_eq!(contract.raffles.get(&1u128).unwrap().game_continues, true);
+    }
 }
