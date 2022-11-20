@@ -282,8 +282,6 @@ impl RafflesMap {
                     // take prize
                     let prize: JsonToken = self.get_prize(&key, _x.try_into().unwrap()).unwrap();
 
-                    // TODO в случае выбора приза на рандоме
-                    // если уже был приз то ставить ему фоллс для этого призы на мап
                     // take random prize and sale false or delete fromm collection
                     // let prize: JsonToken = self.get_random_prize(&key).unwrap();
 
@@ -426,20 +424,10 @@ pub struct Winner {
     prize: JsonToken,
 }
 
-// TODO: перед главным запуском
-// удалить все фулл аксес код
-// оставить ключи для вызова функций администативных
-
-// TODO MAYBE
-// use near collection in state!!!
-// метод что позволит тем кто у нас хранит токен за обновление голосовать
-
 // #[near_bindgen]
 impl Winner {
     //TODO: send prize to winner
     fn send_prize_to_winner(&mut self) {
-        // записать как праметр и отправлять через селф.
-        // между контрактный вызов нфт
         // cross contract call nft
         // method take my price (backend)
     }
@@ -524,7 +512,6 @@ mod tests {
         assert_eq!(contract.get_raffle(1u128).unwrap().participants.is_empty(), false);
         assert_eq!(contract.raffles.get(&1u128).unwrap().participants.as_vector().get(0).unwrap().to_string(), env::predecessor_account_id().to_string());
 
-        //Vanias code!
         // let mut contract = RafflesMap::init(BENEFICIARY.parse().unwrap());
         // contract.start_new_raffle(1, 10*NEAR, JsonToken { token_id: "1111".to_string(), owner_id: env::predecessor_account_id() });
 
@@ -562,14 +549,6 @@ mod tests {
         assert_eq!(contract.raffles.get(&1u128).unwrap().winners.get(0).unwrap().prize, nft);
         assert_eq!(contract.raffles.get(&1u128).unwrap().game_continues, false);
     }
-
-    // #[test]
-    // fn add_participant() {
-    //     let mut contract = RafflesMap::default();
-    //     contract.start_new_raffle(1, 1, JsonToken { token_id: "1111".to_string(), owner_id: env::predecessor_account_id() });
-    //     contract.add_participant(1, env::predecessor_account_id());
-    //     assert_eq!(contract.get_raffle(1).cloned().unwrap().get_participants().get(0).unwrap().to_string(), "bob.near");
-    // }
 
     #[test]
     fn test_one_acc_one_time() {
