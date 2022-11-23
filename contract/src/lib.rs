@@ -106,12 +106,12 @@ impl RafflesMap {
         self.raffles.get(&key)
     }
 
-    fn get_winners(&self, key: &u128) -> Vector<Winner> {
-        self.raffles.get(key).unwrap().winners
+    pub fn get_winners(&self, key: &u128) -> Vec<Winner> {
+        self.raffles.get(key).unwrap().winners.to_vec()
     }
 
-    fn get_participants(&self, key: &u128) -> UnorderedSet<AccountId> {
-        self.raffles.get(key).unwrap().participants
+    pub fn get_participants(&self, key: &u128) -> Vec<AccountId> {
+        self.raffles.get(key).unwrap().participants.to_vec()
     }
 
     fn get_random_participant(&self, key: &u128) -> Option<AccountId> {
@@ -128,7 +128,7 @@ impl RafflesMap {
     }
 
     #[payable]
-    fn add_participant(&mut self, key: u128, sender: &AccountId) -> bool {
+    pub fn add_participant(&mut self, key: u128, sender: &AccountId) -> bool {
         // let sender: AccountId = env::predecessor_account_id();
         let pays: Balance = env::attached_deposit();
 
@@ -136,7 +136,7 @@ impl RafflesMap {
 
         let to_transfer: Balance = if pays >= ticket_price {
             // Subtract the storage cost to the amount to transfer
-            ticket_price - STORAGE_COST
+            ticket_price - 1
         } else {
             0
         };
@@ -420,7 +420,8 @@ pub struct JsonToken {
 }
 
 // #[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize)]
+#[derive(Deserialize, Serialize, BorshDeserialize, BorshSerialize, Debug)]
+// #[serde(crate = "near_sdk::serde")]
 pub struct Winner {
     winner_wallet_account_id: AccountId,
     prize: JsonToken,
